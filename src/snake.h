@@ -8,12 +8,17 @@
 
 enum class GameState
 {
-  GS_PAUSE = 0, GS_INFO
+  PAUSE = 0, INFO, GAMEOVER
 };
 
 enum class Direction
 {
-  DIR_IN_PLACE = 0, DIR_LEFT, DIR_RIGHT, DIR_UP, DIR_DOWN
+  IN_PLACE = 0, LEFT, RIGHT, UP, DOWN
+};
+
+enum class Symbols
+{
+  FOOD = 0, HEAD, BODY
 };
 
 class CSnake:public CFramedWindow
@@ -24,20 +29,26 @@ public:
   void paint();
   bool handleEvent(int key);
 
+  GameState s_state;
+
   size_t s_level;
   size_t s_score;
-  
-  GameState s_state;
-  double s_speed;
-
   CPoint s_food_coord;
-
+  
   std::vector<CPoint> s_snake;
+  double s_speed;
+  Direction s_dir;
+
+  void set_window();
+
+  char symbol(Symbols s);
 
   void display_start_menu();
   void display_sneak();
 
-  void set_window();
+  void generate_new_food();
+  void generate_new_snake();
+
 };
 
 #endif
