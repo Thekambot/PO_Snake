@@ -5,6 +5,8 @@
 
 int main ()
 {
+  getchar();
+
   CDesktop d;
   d.insert(new CInputLine (CRect (CPoint (5, 7), CPoint (15, 15))));
   d.insert(new CWindow (CRect (CPoint (1, 1), CPoint (4, 50)), 'O'));

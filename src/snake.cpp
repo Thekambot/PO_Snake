@@ -44,6 +44,9 @@ void CSnake::paint()
     case GameState::GAMEOVER:
       display_gameover_screen();
       break;
+
+    case GameState::UNPAUSE:
+      break;
   }
 }
 
@@ -151,11 +154,15 @@ void CSnake::game_interval()
 
 void CSnake::snakeMove()
 {
-  vector<CPoint>::iterator it;
+  // vector<CPoint>::iterator it;
+  // for (it = s_snake.begin(); it != std::prev(s_snake.end(), 1); it++)
+  // {
+  //   *std::next(it, 1) = *it;
+  // }
 
-  for (it = s_snake.begin(); it != s_snake.end() - 1; it++)
+  for (size_t i = 0; i < s_snake.size() - 2; i++ )
   {
-    *(it + 1) = *it;
+    s_snake[i + 1] = s_snake[i];
   }
 
   switch (s_dir)
@@ -179,18 +186,33 @@ void CSnake::snakeMove()
     if (--s_snake.front().x < 1)
       s_snake.front().x = geom.size.x - 2;
     break;
+
+    case Direction::IN_PLACE:
+    break;
   }
 
-  for(it = s_snake.begin() + 1; it != s_snake.end(); it++)
+  // for(it = std::next(s_snake.begin(), 1); it != s_snake.end(); it++)
+  // {
+  //   if (s_snake.front().x == (*it).x && 
+  //       s_snake.front().y == (*it).y)
+  //   {
+  //     s_state = GameState::GAMEOVER;
+  //     return;
+  //   }
+  // }
+
+  for (size_t i = 1; i < s_snake.size() - 1; i++ )
   {
-    if (s_snake.front() == *it)
+    if (s_snake.front().x == s_snake[i].x && 
+        s_snake.front().y == s_snake[i].y)
     {
       s_state = GameState::GAMEOVER;
       return;
     }
   }
 
-  if (s_snake.front() == s_food_coord)
+  if (s_snake.front().x == s_food_coord.x && 
+      s_snake.front().y == s_food_coord.y)
   {
     s_snake.push_back(s_snake.back());
     s_score++;
@@ -215,10 +237,21 @@ void CSnake::generate_new_food()
     s_food_coord.y = rand() % (geom.size.y - 1) + 1;
     inside_body = false;
 
-    vector<CPoint>::iterator it;
-    for (it = s_snake.begin() + 1; it != s_snake.end() - 1; it++)
+    // vector<CPoint>::iterator it;
+    // for (it = std::next(s_snake.begin(), 1); it != s_snake.end(); it++)
+    // {
+    //   if (s_food_coord.x == (*it).x && 
+    //       s_food_coord.y == (*it).y)
+    //   {
+    //     inside_body = true;
+    //     break;
+    //   }
+    // }
+
+    for (size_t i = 1; i < s_snake.size() - 1; i++ )
     {
-      if (*it == s_food_coord)
+      if (s_food_coord.x == s_snake[i].x && 
+          s_food_coord.y == s_snake[i].y)
       {
         inside_body = true;
         break;
@@ -231,7 +264,7 @@ void CSnake::generate_new_food()
 void CSnake::generate_new_snake()
 {
   s_snake.clear();
-  s_snake.reserve(3);
+  s_snake.reserve(50);
 
   s_snake.push_back(CPoint(4, 2));
   s_snake.push_back(CPoint(3, 2));
@@ -276,11 +309,17 @@ void CSnake::display_sneak()
   gotoyx(top + s_snake.front().y, left + s_snake.front().x);
   printc(symbol(Symbols::HEAD));
 
-  vector<CPoint>::iterator it;  
-  for (it = s_snake.begin() + 1; it != s_snake.end() - 1; it++)
+  // vector<CPoint>::iterator it;  
+  // for (it = std::next(s_snake.begin(), 1); it != s_snake.end(); it++)
+  // {
+  //   gotoyx(top + (*it).y, left + (*it).x);
+  //   printc(symbol(Symbols::BODY));
+  // }
+
+  for (size_t i = 1; i < s_snake.size() - 1; i++ )
   {
-    gotoyx(top + (*it).y, left + (*it).x);
-    printc(symbol(Symbols::HEAD));
+    gotoyx(top + s_snake[i].y, left + s_snake[i].x);
+    printc(symbol(Symbols::BODY));
   }
 }
 
