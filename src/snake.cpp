@@ -35,14 +35,30 @@ void CSnake::paint()
   switch (s_state)
   {
     case GameState::INFO:
-      display_start_menu(); break;
+      display_start_menu(); 
+      break;
 
     case GameState::PAUSE: 
       break;
 
-    case GameState::GAMEOVER 
+    case GameState::GAMEOVER:
+      display_gameover_screen();
       break;
   }
+}
+
+bool CSnake::handleEvent(int key)
+{
+  Controls button = key_to_control(key);
+  bool action = game_controls(button);
+
+  if (s_state != GameState::UNPAUSE)
+    if (CFramedWindow::handleEvent(key))
+      return true;
+
+  game_interval();
+
+  return action;
 }
 
 void CSnake::set_window()
@@ -59,12 +75,157 @@ void CSnake::set_window()
   display_start_menu();
 }
 
+bool CSnake::game_controls(Controls key)
+{
+  bool value = false;
+
+  switch (key)
+  {
+    case Controls::r:
+    set_window();
+    value = true;
+    break;
+
+    case Controls::p:
+    s_state = GameState::PAUSE;
+    value = true;
+    break;
+
+    case Controls::h:
+    s_state = GameState::INFO;
+    value = true;
+    break;
+
+    default: value = false; break;
+  }
+
+  if (s_state == GameState::UNPAUSE)
+  {
+    switch (key)
+    {
+      case Controls::up:
+      if (s_dir == Direction::DOWN) break;
+      s_dir = Direction::UP;
+      value = true;
+      break;
+
+      case Controls::down:
+      if (s_dir == Direction::UP) break;
+      s_dir = Direction::DOWN;
+      value = true;
+      break;
+
+      case Controls::right:
+      if (s_dir == Direction::LEFT) break;
+      s_dir = Direction::RIGHT;
+      value = true;
+      break;
+
+      case Controls::left:
+      if (s_dir == Direction::RIGHT) break;
+      s_dir = Direction::LEFT;
+      value = true;
+      break;
+
+      default: value = false; break;
+    }
+  }
+  
+  return value;
+}
+
+void CSnake::game_interval()
+{
+  clock_t start_time = clock();
+
+	double elapsed_time = 0.0;
+
+	while (s_speed * elapsed_time < 1)
+	{
+		elapsed_time = 1.0 * (clock() - start_time) / CLOCKS_PER_SEC;
+	}
+
+  snakeMove();
+  paint();
+}
+
+void CSnake::snakeMove()
+{
+  vector<CPoint>::iterator it;
+
+  for (it = s_snake.begin(); it != s_snake.end() - 1; it++)
+  {
+    *(it + 1) = *it;
+  }
+
+  switch (s_dir)
+  {
+    case Direction::UP: 
+    if (--s_snake.front().y < 1)
+      s_snake.front().y = geom.size.y - 2;
+    break;
+
+    case Direction::DOWN:
+    if (++s_snake.front().y > geom.size.y - 2)
+      s_snake.front().y = 1;
+    break;
+
+    case Direction::RIGHT:
+    if (++s_snake.front().x > geom.size.x - 2)
+      s_snake.front().x = 1;
+    break;
+
+    case Direction::LEFT:
+    if (--s_snake.front().x < 1)
+      s_snake.front().x = geom.size.x - 2;
+    break;
+  }
+
+  for(it = s_snake.begin() + 1; it != s_snake.end(); it++)
+  {
+    if (s_snake.front() == *it)
+    {
+      s_state = GameState::GAMEOVER;
+      return;
+    }
+  }
+
+  if (s_snake.front() == s_food_coord)
+  {
+    s_snake.push_back(s_snake.back());
+    s_score++;
+
+    if (s_score % 5 == 0 && s_level <= 10)
+    {
+      s_level++; s_speed++;
+    }
+
+    generate_new_food();
+  }
+}
+
 void CSnake::generate_new_food()
 {
   srand(time(NULL));
+  bool inside_body = false;
 
-  s_food_coord.x = rand() % (geom.size.x - 1) + 1;
-  s_food_coord.y = rand() % (geom.size.y - 1) + 1;
+  do
+  {
+    s_food_coord.x = rand() % (geom.size.x - 1) + 1;
+    s_food_coord.y = rand() % (geom.size.y - 1) + 1;
+    inside_body = false;
+
+    vector<CPoint>::iterator it;
+    for (it = s_snake.begin() + 1; it != s_snake.end() - 1; it++)
+    {
+      if (*it == s_food_coord)
+      {
+        inside_body = true;
+        break;
+      }
+    }
+  }
+  while (inside_body);
 }
 
 void CSnake::generate_new_snake()
@@ -93,4 +254,50 @@ void CSnake::display_start_menu()
 
 	gotoyx(geom.topleft.y + 8, geom.topleft.x + 11);
 	printl("move window (in pause mode)");
+}
+
+void CSnake::display_gameover_screen()
+{
+  gotoyx(geom.topleft.y + 4, geom.topleft.x + 2);
+	printl("GAME OVER!");	
+		
+	gotoyx(geom.topleft.y + 5, geom.topleft.x + 2);
+	printl("Score: %d", s_score);
+
+	gotoyx(geom.topleft.y + 6, geom.topleft.x + 2);
+	printl("r - reset game");
+}
+
+void CSnake::display_sneak()
+{
+  int left = geom.topleft.x;
+	int top = geom.topleft.y;
+
+  gotoyx(top + s_snake.front().y, left + s_snake.front().x);
+  printc(symbol(Symbols::HEAD));
+
+  vector<CPoint>::iterator it;  
+  for (it = s_snake.begin() + 1; it != s_snake.end() - 1; it++)
+  {
+    gotoyx(top + (*it).y, left + (*it).x);
+    printc(symbol(Symbols::HEAD));
+  }
+}
+
+Controls CSnake::key_to_control(int key)
+{
+  switch (key)
+  {
+    case 'r': return Controls::r;
+    case 'R': return Controls::R;
+    case 'p': return Controls::p;
+    case 'P': return Controls::P;
+    case 'h': return Controls::H;
+    case KEY_UP: return Controls::up;
+    case KEY_DOWN: return Controls::down;
+    case KEY_RIGHT: return Controls::right;
+    case KEY_LEFT: return Controls::left;
+
+    default: return Controls::not_set;
+  }
 }

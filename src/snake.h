@@ -8,7 +8,7 @@
 
 enum class GameState
 {
-  PAUSE = 0, INFO, GAMEOVER
+  PAUSE = 0, UNPAUSE, INFO, GAMEOVER
 };
 
 enum class Direction
@@ -19,6 +19,16 @@ enum class Direction
 enum class Symbols
 {
   FOOD = 0, HEAD, BODY
+};
+
+enum class Controls
+{
+  not_set = 0,
+
+  up = 1, down = 2, right = 3, left = 4,
+  r = 5, R = 5,
+  p = 6, P = 6,
+  h = 7, H = 7
 };
 
 class CSnake:public CFramedWindow
@@ -42,8 +52,15 @@ public:
   void set_window();
 
   char symbol(Symbols s);
+  Controls key_to_control(int key);
+
+  bool game_controls(Controls key);
+  void game_interval();
+
+  void snakeMove();
 
   void display_start_menu();
+  void display_gameover_screen();
   void display_sneak();
 
   void generate_new_food();
