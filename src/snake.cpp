@@ -1,7 +1,11 @@
 #include <time.h>
+#include <vector>
+#include <iostream>
 
-#include "snake.h"
+#include "cpoint.h"
 #include "screen.h"
+#include "winsys.h"
+#include "snake.h"
 
 CSnake::CSnake(CRect r, char _c /*=' '*/):
   CFramedWindow(r, _c)
@@ -72,8 +76,8 @@ void CSnake::set_window()
   s_speed = 1.0;
   s_dir = Direction::IN_PLACE;
 
-  generate_new_food();
   generate_new_snake();
+  generate_new_food();
 
   display_start_menu();
 }

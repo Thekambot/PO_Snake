@@ -1,10 +1,13 @@
 #ifndef __SNAKE_H__
 #define __SNAKE_H__
 
-#include <iostream>
+#include <time.h>
 #include <vector>
+#include <iostream>
 
+#include "cpoint.h"
 #include "winsys.h"
+#include "snake.h"
 
 enum class GameState
 {
