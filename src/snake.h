@@ -60,11 +60,11 @@ public:
   bool game_controls(Controls key);
   void game_interval();
 
-  void snakeMove();
+  void snake_move();
 
   void display_start_menu();
   void display_gameover_screen();
-  void display_sneak();
+  void display_snake();
 
   void generate_new_food();
   void generate_new_snake();

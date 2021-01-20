@@ -34,7 +34,7 @@ void CSnake::paint()
   gotoyx(geom.topleft.y + s_food_coord.y, geom.topleft.x + s_food_coord.x);
   printc(symbol(Symbols::FOOD));
 
-  display_sneak();
+  display_snake();
 
   switch (s_state)
   {
@@ -73,13 +73,11 @@ void CSnake::set_window()
   s_state = GameState::INFO;
   s_level = 1;
   s_score = 0;
-  s_speed = 1.0;
+  s_speed = 10.0;
   s_dir = Direction::IN_PLACE;
 
   generate_new_snake();
   generate_new_food();
-
-  display_start_menu();
 }
 
 bool CSnake::game_controls(Controls key)
@@ -89,24 +87,30 @@ bool CSnake::game_controls(Controls key)
   switch (key)
   {
     case Controls::r:
-    set_window();
-    value = true;
+      set_window();
+      value = true;
     break;
 
     case Controls::p:
-    s_state = GameState::PAUSE;
-    value = true;
+      if (s_state == GameState::PAUSE)
+        s_state = GameState::UNPAUSE;
+      else
+        s_state = GameState::PAUSE;
+      value = true;
     break;
 
     case Controls::h:
-    s_state = GameState::INFO;
-    value = true;
+      if (s_state == GameState::INFO)
+        s_state = GameState::UNPAUSE;
+      else
+        s_state = GameState::INFO;
+      value = true;
     break;
 
     default: value = false; break;
   }
 
-  if (s_state == GameState::UNPAUSE)
+  if (s_state != GameState::PAUSE && s_state != GameState::INFO && s_state != GameState::GAMEOVER)
   {
     switch (key)
     {
@@ -152,42 +156,44 @@ void CSnake::game_interval()
 		elapsed_time = 1.0 * (clock() - start_time) / CLOCKS_PER_SEC;
 	}
 
-  snakeMove();
+  snake_move();
   paint();
 }
 
-void CSnake::snakeMove()
+void CSnake::snake_move()
 {
-  // vector<CPoint>::iterator it;
-  // for (it = s_snake.begin(); it != std::prev(s_snake.end(), 1); it++)
-  // {
-  //   *std::next(it, 1) = *it;
-  // }
+  if (s_dir == Direction::IN_PLACE)
+    return;
 
-  for (size_t i = 0; i < s_snake.size() - 2; i++ )
+  for (vector<CPoint>::reverse_iterator it = s_snake.rbegin(); it != std::prev(s_snake.rend(), 1); it++)
   {
-    s_snake[i + 1] = s_snake[i];
+    *it = *std::next(it, 1);
   }
+
+  // for (size_t i = 0; i < s_snake.size() - 2; i++ )
+  // {
+  //   s_snake[i + 1] = s_snake[i];
+  // }
 
   switch (s_dir)
   {
     case Direction::UP: 
-    if (--s_snake.front().y < 1)
+    if (--(s_snake.front().y) < 1)
       s_snake.front().y = geom.size.y - 2;
     break;
 
     case Direction::DOWN:
-    if (++s_snake.front().y > geom.size.y - 2)
+    if (++(s_snake.front().y) > geom.size.y - 2)
       s_snake.front().y = 1;
     break;
 
     case Direction::RIGHT:
-    if (++s_snake.front().x > geom.size.x - 2)
+    if (++(s_snake.front().x) > geom.size.x - 2)
       s_snake.front().x = 1;
     break;
 
     case Direction::LEFT:
-    if (--s_snake.front().x < 1)
+    if (--(s_snake.front().x) < 1)
       s_snake.front().x = geom.size.x - 2;
     break;
 
@@ -195,28 +201,27 @@ void CSnake::snakeMove()
     break;
   }
 
-  // for(it = std::next(s_snake.begin(), 1); it != s_snake.end(); it++)
-  // {
-  //   if (s_snake.front().x == (*it).x && 
-  //       s_snake.front().y == (*it).y)
-  //   {
-  //     s_state = GameState::GAMEOVER;
-  //     return;
-  //   }
-  // }
-
-  for (size_t i = 1; i < s_snake.size() - 1; i++ )
+  vector<CPoint>::iterator it;
+  for(it = std::next(s_snake.begin(), 1); it != s_snake.end(); it++)
   {
-    if (s_snake.front().x == s_snake[i].x && 
-        s_snake.front().y == s_snake[i].y)
+    if (s_snake.front() == *it)
     {
       s_state = GameState::GAMEOVER;
       return;
     }
   }
 
-  if (s_snake.front().x == s_food_coord.x && 
-      s_snake.front().y == s_food_coord.y)
+  // for (size_t i = 1; i < s_snake.size() - 1; i++ )
+  // {
+  //   if (s_snake.front().x == s_snake[i].x && 
+  //       s_snake.front().y == s_snake[i].y)
+  //   {
+  //     s_state = GameState::GAMEOVER;
+  //     return;
+  //   }
+  // }
+
+  if (s_snake.front() == s_food_coord)
   {
     s_snake.push_back(s_snake.back());
     s_score++;
@@ -237,30 +242,29 @@ void CSnake::generate_new_food()
 
   do
   {
-    s_food_coord.x = rand() % (geom.size.x - 1) + 1;
-    s_food_coord.y = rand() % (geom.size.y - 1) + 1;
+    s_food_coord.x = rand() % (geom.size.x - 2) + 1;
+    s_food_coord.y = rand() % (geom.size.y - 2) + 1;
     inside_body = false;
 
-    // vector<CPoint>::iterator it;
-    // for (it = std::next(s_snake.begin(), 1); it != s_snake.end(); it++)
-    // {
-    //   if (s_food_coord.x == (*it).x && 
-    //       s_food_coord.y == (*it).y)
-    //   {
-    //     inside_body = true;
-    //     break;
-    //   }
-    // }
-
-    for (size_t i = 1; i < s_snake.size() - 1; i++ )
+    vector<CPoint>::iterator it;
+    for (it = std::next(s_snake.begin(), 1); it != s_snake.end(); it++)
     {
-      if (s_food_coord.x == s_snake[i].x && 
-          s_food_coord.y == s_snake[i].y)
+      if (s_food_coord == *it)
       {
         inside_body = true;
         break;
       }
     }
+
+    // for (size_t i = 1; i < s_snake.size() - 1; i++ )
+    // {
+    //   if (s_food_coord.x == s_snake[i].x && 
+    //       s_food_coord.y == s_snake[i].y)
+    //   {
+    //     inside_body = true;
+    //     break;
+    //   }
+    // }
   }
   while (inside_body);
 }
@@ -305,26 +309,26 @@ void CSnake::display_gameover_screen()
 	printl("r - reset game");
 }
 
-void CSnake::display_sneak()
+void CSnake::display_snake()
 {
   int left = geom.topleft.x;
 	int top = geom.topleft.y;
 
+  vector<CPoint>::iterator it;  
+  for (it = std::next(s_snake.begin(), 1); it != s_snake.end(); it++)
+  {
+    gotoyx(top + (*it).y, left + (*it).x);
+    printc(symbol(Symbols::BODY));
+  }
+
   gotoyx(top + s_snake.front().y, left + s_snake.front().x);
   printc(symbol(Symbols::HEAD));
 
-  // vector<CPoint>::iterator it;  
-  // for (it = std::next(s_snake.begin(), 1); it != s_snake.end(); it++)
+  // for (size_t i = 1; i < s_snake.size() - 1; i++ )
   // {
-  //   gotoyx(top + (*it).y, left + (*it).x);
+  //   gotoyx(top + s_snake[i].y, left + s_snake[i].x);
   //   printc(symbol(Symbols::BODY));
   // }
-
-  for (size_t i = 1; i < s_snake.size() - 1; i++ )
-  {
-    gotoyx(top + s_snake[i].y, left + s_snake[i].x);
-    printc(symbol(Symbols::BODY));
-  }
 }
 
 Controls CSnake::key_to_control(int key)
@@ -335,7 +339,8 @@ Controls CSnake::key_to_control(int key)
     case 'R': return Controls::R;
     case 'p': return Controls::p;
     case 'P': return Controls::P;
-    case 'h': return Controls::H;
+    case 'h': return Controls::h;
+    case 'H': return Controls::H;
     case KEY_UP: return Controls::up;
     case KEY_DOWN: return Controls::down;
     case KEY_RIGHT: return Controls::right;
