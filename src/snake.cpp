@@ -1,6 +1,9 @@
 #include <time.h>
 #include <vector>
 #include <iostream>
+#include <unistd.h>
+#include <chrono>
+#include <thread>
 
 #include "cpoint.h"
 #include "screen.h"
@@ -56,14 +59,16 @@ void CSnake::paint()
 
 bool CSnake::handleEvent(int key)
 {
-  Controls button = key_to_control(key);
-  bool action = game_controls(button);
+  //Controls button = key_to_control(key);
+  //bool action = game_controls(button);
+  bool action = game_controls(key);
 
   if (s_state != GameState::UNPAUSE)
     if (CFramedWindow::handleEvent(key))
       return true;
 
-  game_interval();
+  if (s_state != GameState::GAMEOVER)
+    game_interval();
 
   return action;
 }
@@ -73,11 +78,71 @@ void CSnake::set_window()
   s_state = GameState::INFO;
   s_level = 1;
   s_score = 0;
-  s_speed = 10.0;
+  s_speed = 1;
   s_dir = Direction::IN_PLACE;
 
   generate_new_snake();
   generate_new_food();
+}
+
+bool CSnake::game_controls(int key)
+{
+  if (key == 'r' || key == 'R')
+  {
+    set_window();
+    return true;
+  }
+
+  if (key == 'p' || key == 'P')
+  {
+    if (s_state == GameState::PAUSE)
+      s_state = GameState::UNPAUSE;
+    else
+      s_state = GameState::PAUSE;
+    return true;
+  }
+
+  if (key == 'h' || key == 'H')
+  {
+    if (s_state == GameState::INFO)
+      s_state = GameState::UNPAUSE;
+    else
+      s_state = GameState::INFO;
+    return true;
+  }
+
+  if (s_state != GameState::PAUSE && s_state != GameState::INFO && s_state != GameState::GAMEOVER)
+  {
+    if (key == KEY_UP)
+    {
+      if (s_dir != Direction::DOWN)
+        s_dir = Direction::UP;
+      return true;
+    }
+
+    if (key == KEY_DOWN)
+    {
+      if (s_dir != Direction::UP)
+        s_dir = Direction::DOWN;
+      return true;
+    }
+
+    if (key == KEY_RIGHT)
+    {
+      if (s_dir != Direction::LEFT)
+        s_dir = Direction::RIGHT;
+      return true;
+    }
+
+    if (key == KEY_LEFT)
+    {
+      if (s_dir != Direction::RIGHT)
+        s_dir = Direction::LEFT;
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 bool CSnake::game_controls(Controls key)
@@ -147,14 +212,16 @@ bool CSnake::game_controls(Controls key)
 
 void CSnake::game_interval()
 {
-  clock_t start_time = clock();
+  // clock_t start_time = clock();
 
-	double elapsed_time = 0.0;
+	// double elapsed_time = 0.0;
 
-	while (s_speed * elapsed_time < 1)
-	{
-		elapsed_time = 1.0 * (clock() - start_time) / CLOCKS_PER_SEC;
-	}
+	// while (s_speed * elapsed_time < 1)
+	// {
+	// 	elapsed_time = 1.0 * (clock() - start_time) / CLOCKS_PER_SEC;
+	// }
+
+  std::this_thread::sleep_for(std::chrono::milliseconds((110 - s_speed * 10)));
 
   snake_move();
   paint();
@@ -162,7 +229,7 @@ void CSnake::game_interval()
 
 void CSnake::snake_move()
 {
-  if (s_dir == Direction::IN_PLACE)
+  if (s_dir == Direction::IN_PLACE || s_state != GameState::UNPAUSE)
     return;
 
   for (vector<CPoint>::reverse_iterator it = s_snake.rbegin(); it != std::prev(s_snake.rend(), 1); it++)
@@ -226,9 +293,9 @@ void CSnake::snake_move()
     s_snake.push_back(s_snake.back());
     s_score++;
 
-    if (s_score % 5 == 0 && s_level <= 10)
+    if (s_score % 2 == 0 && s_level <= 10)
     {
-      s_level++; s_speed++;
+      s_level++; s_speed += 1;
     }
 
     generate_new_food();

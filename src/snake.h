@@ -49,7 +49,7 @@ public:
   CPoint s_food_coord;
   
   std::vector<CPoint> s_snake;
-  double s_speed;
+  int s_speed;
   Direction s_dir;
 
   void set_window();
@@ -58,6 +58,7 @@ public:
   Controls key_to_control(int key);
 
   bool game_controls(Controls key);
+  bool game_controls(int key);
   void game_interval();
 
   void snake_move();

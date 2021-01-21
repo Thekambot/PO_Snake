@@ -5,7 +5,7 @@
 
 int main ()
 {
-  getchar();
+  //getchar();
 
   CDesktop d;
   d.insert(new CInputLine (CRect (CPoint (5, 7), CPoint (15, 15))));
